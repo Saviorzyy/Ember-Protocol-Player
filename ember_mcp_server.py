@@ -62,10 +62,23 @@ class GameClient:
         self._state = {}
 
     async def connect(self) -> dict:
-        self.ws = await websockets.connect(f"{self.url}/ws/game?token={self.token}")
+        try:
+            self.ws = await websockets.connect(f"{self.url}/ws/game?token={self.token}")
+        except websockets.InvalidURI as e:
+            raise RuntimeError(f"无法连接到游戏服务器 {self.url} — 请确认服务器已启动") from e
+        except OSError as e:
+            raise RuntimeError(f"连接被拒绝 {self.url} — 请确认服务器已启动 (python3 -m server.main)") from e
+
         session = json.loads(await self.ws.recv())
+        if session.get("type") == "error":
+            code = session.get("error_code", "")
+            detail = session.get("detail", "")
+            if code == "UNAUTHORIZED":
+                raise RuntimeError(f"Token 无效或已过期。请重新注册角色并更新 MCP 配置中的 token。\n  注册: python3 ember_mcp_server.py --register")
+            raise RuntimeError(f"认证失败: {code} — {detail}")
         if session.get("type") != "session":
             raise RuntimeError(f"Expected session, got {session.get('type')}")
+
         self.agent_id = session["agent_id"]
         self.agent_name = session["agent_name"]
         self._state = session.get("state", {})
