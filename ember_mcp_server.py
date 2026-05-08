@@ -218,9 +218,9 @@ def _fmt_result(frame: dict) -> str:
         if r.get("type") == "attack" and r.get("target_type") == "creature":
             ct = r.get("target_creature_type", "未知")
             if r.get("target_killed"):
-                text += f"\n  💀 **击杀 {ct}**!"
+                lines.append(f"  💀 **击杀 {ct}**!")
             else:
-                text += f"\n  🐛 攻击 {ct}: HP {r.get('target_hp', '?')}"
+                lines.append(f"  🐛 攻击 {ct}: HP {r.get('target_hp', '?')}")
 
         # Show missing materials
         if r.get("missing"):
